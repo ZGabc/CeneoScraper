@@ -14,28 +14,38 @@ def extract_tag(ancestor, selector, attribute=None, return_list=False):
     except (AttributeError, TypeError):
         return None 
 
+selectors = {
+        "opinion_id": [None, "data-entry-id"],
+        "author": ["span.user__post-name"],
+        "recomendation": ["span.user-post_author.recomendation>em"],
+        "rating":["span.user-post__score-count"],
+        "verified":["div.review-pz"],
+        "post_date":["span.user-post__published>time:nth-child(1)","datetime"],
+        "purchase_date":["span.user-post__published>time:nth-child(2)","datetime"],
+        "vote_up":["button.vote-yes","data-total-vote"],
+        "vote_down":["button.vote-no","data-total-vote"],
+        "content":["div.user-post__text"],
+        "pros":["div.review-feature__titles—positives~div.review-feature-item",None, True],
+        "cons":["div.review-feature__titles—negatives~div.review-feature-item",None, True],
+    }
+
 #product_code =input("podaj kod produktu: ")
 product_code=96693065
 url=f"https://www.ceneo.pl/{product_code}#tab=reviews"
-response = requests.get(url)
-page_dom = BeautifulSoup(response.text, "html.parser")
-opinions = page_dom.select("div.js_product-review")
 all_opinions = []
-for opionion in opinions:
-    single_opinion = {
-        "opinion_id": extract_tag(opionion, None, "data-entry-id"),
-        "author": extract_tag(opionion, "span.user__post-name"),
-        "recomendation":extract_tag(opionion,"span.user-post_author.recomendation>em"),
-        "rating":extract_tag(opionion,"span.user-post__score-count"),
-        "verified":extract_tag(opionion,"div.review-pz"),
-        "post_date":extract_tag(opionion,"span.user-post__published>time:nth-child(1)","datetime"),
-        "purchase_date":extract_tag(opionion,"span.user-post__published>time:nth-child(2)","datetime"),
-        "vote_up":extract_tag(opionion,"button.vote-yes","data-total-vote"),
-        "vote_down":extract_tag(opionion,"button.vote-no","data-total-vote"),
-        "content":extract_tag(opionion,"div.user-post__text"),
-        "pros":extract_tag(opionion,"div.review-feature__titles—positives~div.review-feature-item",None, True),
-        "cons":extract_tag(opionion,"div.review-feature__titles—negatives~div.review-feature-item",None, True)
-    }
-    all_opinions.append(single_opinion)
-with open("./opinions/{product_code}.json", "w", encoding="UTF-8") as jf:
+while(url):
+    print(url)
+    response = requests.get(url)
+    page_dom = BeautifulSoup(response.text, "html.parser")
+    opinions = page_dom.select("div.js_product-review")
+    for opinion in opinions:
+        single_opinion = {}
+        for key, value in selectors.items():
+            single_opinion[key]= extract_tag(opinion, *value)
+        all_opinions.append(single_opinion)
+    try:
+        url="https://www.ceneo.pl"+ extract_tag(page_dom,"a.pagination__next", "href")
+    except TypeError:
+        url=None
+with open(f"./opinions/{product_code}.json", "w", encoding="UTF-8") as jf:
     json.dump(all_opinions, jf, indent=4, ensure_ascii=False)
