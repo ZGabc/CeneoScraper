@@ -20,3 +20,8 @@
 ##wykorzystane biblioteki
 -BeautifulSoup4
 -Requests
+-Json
+-Os
+-Pandas
+-Numpy
+-Matplotlib
